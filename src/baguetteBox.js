@@ -21,9 +21,9 @@
 
     // SVG shapes used on the buttons
     var leftArrow = '<svg width="44" height="60">' +
-            '<polyline points="30 10 10 30 30 50" stroke="rgba(255,255,255,0.5)" stroke-width="4"' +
-              'stroke-linecap="butt" fill="none" stroke-linejoin="round"/>' +
-            '</svg>',
+        '<polyline points="30 10 10 30 30 50" stroke="rgba(255,255,255,0.5)" stroke-width="4"' +
+        'stroke-linecap="butt" fill="none" stroke-linejoin="round"/>' +
+        '</svg>',
         rightArrow = '<svg width="44" height="60">' +
             '<polyline points="14 10 34 30 14 50" stroke="rgba(255,255,255,0.5)" stroke-width="4"' +
             'stroke-linecap="butt" fill="none" stroke-linejoin="round"/>' +
@@ -67,33 +67,35 @@
     var touch = {};
     // If set to true ignore touch events because animation was already fired
     var touchFlag = false;
-    // Regex pattern to match image files
-    var regex = /.+\.(gif|jpe?g|png|webp)/i;
+    // Regex pattern to match image & video files
+    var regex = /.+\.(gif|jpe?g|png|webp|mp4|webm)/i;
+    // Pattern to match only videos
+    var videoRegex = /.+\.(mp4|webm)/i;
     // Object of all used galleries
     var data = {};
     // Array containing temporary images DOM elements
     var imagesElements = [];
     // The last focused element before opening the overlay
     var documentLastFocus = null;
-    var overlayClickHandler = function(event) {
+    var overlayClickHandler = function (event) {
         // Close the overlay when user clicks directly on the background
         if (event.target.id.indexOf('baguette-img') !== -1) {
             hideOverlay();
         }
     };
-    var previousButtonClickHandler = function(event) {
+    var previousButtonClickHandler = function (event) {
         event.stopPropagation ? event.stopPropagation() : event.cancelBubble = true; // eslint-disable-line no-unused-expressions
         showPreviousImage();
     };
-    var nextButtonClickHandler = function(event) {
+    var nextButtonClickHandler = function (event) {
         event.stopPropagation ? event.stopPropagation() : event.cancelBubble = true; // eslint-disable-line no-unused-expressions
         showNextImage();
     };
-    var closeButtonClickHandler = function(event) {
+    var closeButtonClickHandler = function (event) {
         event.stopPropagation ? event.stopPropagation() : event.cancelBubble = true; // eslint-disable-line no-unused-expressions
         hideOverlay();
     };
-    var touchstartHandler = function(event) {
+    var touchstartHandler = function (event) {
         touch.count++;
         if (touch.count > 1) {
             touch.multitouch = true;
@@ -102,7 +104,7 @@
         touch.startX = event.changedTouches[0].pageX;
         touch.startY = event.changedTouches[0].pageY;
     };
-    var touchmoveHandler = function(event) {
+    var touchmoveHandler = function (event) {
         // If action was already triggered or multitouch return
         if (touchFlag || touch.multitouch) {
             return;
@@ -116,23 +118,23 @@
         } else if (touchEvent.pageX - touch.startX < -40) {
             touchFlag = true;
             showNextImage();
-        // Move 100 pixels up to close the overlay
+            // Move 100 pixels up to close the overlay
         } else if (touch.startY - touchEvent.pageY > 100) {
             hideOverlay();
         }
     };
-    var touchendHandler = function() {
+    var touchendHandler = function () {
         touch.count--;
         if (touch.count <= 0) {
             touch.multitouch = false;
         }
         touchFlag = false;
     };
-    var contextmenuHandler = function() {
+    var contextmenuHandler = function () {
         touchendHandler();
     };
 
-    var trapFocusInsideOverlay = function(event) {
+    var trapFocusInsideOverlay = function (event) {
         if (overlay.style.display === 'block' && (overlay.contains && !overlay.contains(event.target))) {
             event.stopPropagation();
             initFocus();
@@ -143,7 +145,7 @@
     // http://stackoverflow.com/a/14827443/1077846
     /* eslint-disable */
     if (![].forEach) {
-        Array.prototype.forEach = function(callback, thisArg) {
+        Array.prototype.forEach = function (callback, thisArg) {
             for (var i = 0; i < this.length; i++) {
                 callback.call(thisArg, this[i], i, this);
             }
@@ -153,7 +155,7 @@
     // filter polyfill for IE8
     // https://gist.github.com/eliperelman/1031656
     if (![].filter) {
-        Array.prototype.filter = function(a, b, c, d, e) {
+        Array.prototype.filter = function (a, b, c, d, e) {
             c = this;
             d = [];
             for (e = 0; e < c.length; e++)
@@ -184,7 +186,7 @@
         };
         data[selector] = selectorData;
 
-        [].forEach.call(galleryNodeList, function(galleryElement) {
+        [].forEach.call(galleryNodeList, function (galleryElement) {
             if (userOptions && userOptions.filter) {
                 regex = userOptions.filter;
             }
@@ -198,7 +200,7 @@
             }
 
             // Filter 'a' elements from those not linking to images
-            tagsNodeList = [].filter.call(tagsNodeList, function(element) {
+            tagsNodeList = [].filter.call(tagsNodeList, function (element) {
                 if (element.className.indexOf(userOptions && userOptions.ignoreClass) === -1) {
                     if (userOptions.dblTrigger)
                         return regex.test(element.getAttribute('dblHref'));
@@ -215,8 +217,8 @@
                 userOptions.doubleClickJudgeTimeout = defaults.doubleClickJudgeTimeout;
 
             var gallery = [];
-            [].forEach.call(tagsNodeList, function(imageElement, imageIndex) {
-                var imageElementClickHandler = function(event) {
+            [].forEach.call(tagsNodeList, function (imageElement, imageIndex) {
+                var imageElementClickHandler = function (event) {
                     event.preventDefault ? event.preventDefault() : event.returnValue = false; // eslint-disable-line no-unused-expressions
                     prepareOverlay(gallery, userOptions);
                     showOverlay(imageIndex);
@@ -251,8 +253,8 @@
             return;
         }
         var galleries = data[selector].galleries;
-        [].forEach.call(galleries, function(gallery) {
-            [].forEach.call(gallery, function(imageItem) {
+        [].forEach.call(galleries, function (gallery) {
+            [].forEach.call(gallery, function (imageItem) {
                 unbind(imageItem.imageElement, 'click', imageItem.eventHandler);
             });
 
@@ -312,21 +314,21 @@
 
     function keyDownHandler(event) {
         switch (event.keyCode) {
-        case 37: // Left arrow
-            showPreviousImage();
-            break;
-        case 39: // Right arrow
-            showNextImage();
-            break;
-        case 27: // Esc
-            hideOverlay();
-            break;
-        case 36: // Home
-            showFirstImage(event);
-            break;
-        case 35: // End
-            showLastImage(event);
-            break;
+            case 37: // Left arrow
+                showPreviousImage();
+                break;
+            case 39: // Right arrow
+                showNextImage();
+                break;
+            case 27: // Esc
+                hideOverlay();
+                break;
+            case 36: // Home
+                showFirstImage(event);
+                break;
+            case 35: // End
+                showLastImage(event);
+                break;
         }
     }
 
@@ -436,7 +438,7 @@
             startX: null,
             startY: null
         };
-        loadImage(currentIndex, function() {
+        loadImage(currentIndex, function () {
             preloadNext(currentIndex);
             preloadPrev(currentIndex);
         });
@@ -447,7 +449,7 @@
             enterFullScreen();
         }
         // Fade in overlay
-        setTimeout(function() {
+        setTimeout(function () {
             overlay.className = 'visible';
             if (options.bodyClass && document.body.classList) {
                 document.body.classList.add(options.bodyClass);
@@ -493,6 +495,7 @@
     }
 
     function hideOverlay() {
+        pauseAnyVideoPlaying();
         if (options.noScrollbars) {
             document.documentElement.style.overflowY = 'auto';
             document.body.style.overflowY = 'auto';
@@ -504,7 +507,7 @@
         unbind(document, 'keydown', keyDownHandler);
         // Fade out and hide the overlay
         overlay.className = '';
-        setTimeout(function() {
+        setTimeout(function () {
             overlay.style.display = 'none';
             if (document.fullscreen) {
                 exitFullscreen();
@@ -520,18 +523,29 @@
         }, 500);
     }
 
+    function pauseAnyVideoPlaying() {
+        [].forEach.call(imagesElements, function (imageElement) {
+            if (imageElement.getElementsByTagName('video').length > 0) {
+                imageElement.getElementsByTagName('video')[0].pause();
+            }
+        });
+    }
+
     function loadImage(index, callback) {
         var imageContainer = imagesElements[index];
         var galleryItem = currentGallery[index];
-
+        var isVideo = false;
+        if (typeof imageContainer !== 'undefined') {
+            isVideo = videoRegex.test(galleryItem.imageElement.href);
+        }
         // Return if the index exceeds prepared images in the overlay
         // or if the current gallery has been changed / closed
         if (typeof imageContainer === 'undefined' || typeof galleryItem === 'undefined') {
             return;
         }
 
-        // If image is already loaded run callback and return
-        if (imageContainer.getElementsByTagName('img')[0]) {
+        // If image is already loaded run callback and return OR If video is already loaded run callback and return
+        if (imageContainer.getElementsByTagName('img').length > 0 || imageContainer.getElementsByTagName('video').length > 0) {
             if (callback) {
                 callback();
             }
@@ -540,11 +554,11 @@
 
         // Get element reference, optional caption and source path
         var imageElement = galleryItem.imageElement;
-        var thumbnailElement = imageElement.getElementsByTagName('img')[0];
+        var thumbnailElement = isVideo ? imageElement.getElementsByTagName('video')[0] : imageElement.getElementsByTagName('img')[0];
         var imageCaption = typeof options.captions === 'function' ?
             options.captions.call(currentGallery, imageElement) :
             imageElement.getAttribute('data-caption') || imageElement.title;
-        var imageSrc = getImageSrc(imageElement);
+        var imageSrc = isVideo ? getVideoSrc(imageElement) : getImageSrc(imageElement);
 
         // Prepare figure element
         var figure = create('figure');
@@ -562,27 +576,77 @@
         }
         imageContainer.appendChild(figure);
 
-        // Prepare gallery img element
-        var image = create('img');
-        image.onload = function() {
-            // Remove loader element
-            var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
-            figure.removeChild(spinner);
-            if (!options.async && callback) {
-                callback();
+        if (isVideo) {
+            // Prepare gallery video element
+            var video = create('video');
+            //video.onload = function() {
+            video.addEventListener('loadeddata', function() {
+                //Remove loader element
+                var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
+                figure.removeChild(spinner);
+                if (!options.async && callback) {
+                    callback();
+                }
+            });
+            var source = create('source');
+            source.setAttribute('src', imageSrc);
+            video.appendChild(source);
+            if (options.titleTag && imageCaption) {
+                video.title = imageCaption;
             }
-        };
-        image.setAttribute('src', imageSrc);
-        image.alt = thumbnailElement ? thumbnailElement.alt || '' : '';
-        if (options.titleTag && imageCaption) {
-            image.title = imageCaption;
+            figure.appendChild(video);
+        } else {
+            // Prepare gallery img element
+            var image = create('img');
+            image.onload = function() {
+                // Remove loader element
+                var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
+                figure.removeChild(spinner);
+                if (!options.async && callback) {
+                    callback();
+                }
+            };
+            image.setAttribute('src', imageSrc);
+            image.alt = thumbnailElement ? thumbnailElement.alt || '' : '';
+            if (options.titleTag && imageCaption) {
+                image.title = imageCaption;
+            }
+            figure.appendChild(image);
         }
-        figure.appendChild(image);
 
         // Run callback
         if (options.async && callback) {
             callback();
         }
+    }
+
+    // Get video source location, mostly used for responsive images
+    function getVideoSrc(image) {
+        // Set default image path from href
+        var result = image.getElementsByTagName('video')[0].getElementsByTagName('source')[0].src;
+        // If dataset is supported find the most suitable image
+        if (image.dataset) {
+            var srcs = [];
+            // Get all possible image versions depending on the resolution
+            for (var item in image.dataset) {
+                if (item.substring(0, 3) === 'at-' && !isNaN(item.substring(3))) {
+                    srcs[item.replace('at-', '')] = image.dataset[item];
+                }
+            }
+            // Sort resolutions ascending
+            var keys = Object.keys(srcs).sort(function(a, b) {
+                return parseInt(a, 10) < parseInt(b, 10) ? -1 : 1;
+            });
+            // Get real screen resolution
+            var width = window.innerWidth * window.devicePixelRatio;
+            // Find the first image bigger than or equal to the current width
+            var i = 0;
+            while (i < keys.length - 1 && keys[i] < width) {
+                i++;
+            }
+            result = srcs[keys[i]] || result;
+        }
+        return result;
     }
 
     // Get image source location, mostly used for responsive images
@@ -603,7 +667,7 @@
                 }
             }
             // Sort resolutions ascending
-            var keys = Object.keys(srcs).sort(function(a, b) {
+            var keys = Object.keys(srcs).sort(function (a, b) {
                 return parseInt(a, 10) < parseInt(b, 10) ? -1 : 1;
             });
             // Get real screen resolution
@@ -670,7 +734,7 @@
         }
 
         currentIndex = index;
-        loadImage(currentIndex, function() {
+        loadImage(currentIndex, function () {
             preloadNext(currentIndex);
             preloadPrev(currentIndex);
         });
@@ -689,16 +753,17 @@
      */
     function bounceAnimation(direction) {
         slider.className = 'bounce-from-' + direction;
-        setTimeout(function() {
+        setTimeout(function () {
             slider.className = '';
         }, 400);
     }
 
     function updateOffset() {
+        pauseAnyVideoPlaying();
         var offset = -currentIndex * 100 + '%';
         if (options.animation === 'fadeIn') {
             slider.style.opacity = 0;
-            setTimeout(function() {
+            setTimeout(function () {
                 supports.transforms ?
                     slider.style.transform = slider.style.webkitTransform = 'translate3d(' + offset + ',0,0)'
                     : slider.style.left = offset;
@@ -708,6 +773,9 @@
             supports.transforms ?
                 slider.style.transform = slider.style.webkitTransform = 'translate3d(' + offset + ',0,0)'
                 : slider.style.left = offset;
+        }
+        if (imagesElements[currentIndex].getElementsByTagName('video').length > 0) {
+            imagesElements[currentIndex].getElementsByTagName('video')[0].play();
         }
     }
 
@@ -730,7 +798,7 @@
         var passiveEvents = false;
         try {
             var opts = Object.defineProperty({}, 'passive', {
-                get: function() {
+                get: function () {
                     passiveEvents = true;
                 }
             });
@@ -746,7 +814,7 @@
         if (index - currentIndex >= options.preload) {
             return;
         }
-        loadImage(index + 1, function() {
+        loadImage(index + 1, function () {
             preloadNext(index + 1);
         });
     }
@@ -755,7 +823,7 @@
         if (currentIndex - index >= options.preload) {
             return;
         }
-        loadImage(index - 1, function() {
+        loadImage(index - 1, function () {
             preloadPrev(index - 1);
         });
     }
@@ -765,7 +833,7 @@
             element.addEventListener(event, callback, options);
         } else {
             // IE8 fallback
-            element.attachEvent('on' + event, function(event) {
+            element.attachEvent('on' + event, function (event) {
                 // `event` and `event.target` are not provided in IE8
                 event = event || window.event;
                 event.target = event.target || event.srcElement;
@@ -781,10 +849,10 @@
     function bindSingleDoubleClickItems(element, callbackForDoubleClick, options) {
         if (options.dblTrigger) {
             let timeout, click = 0;
-            element.addEventListener('click', function(event) {
+            element.addEventListener('click', function (event) {
                 click++;
                 clearTimeout(timeout);
-                timeout = setTimeout(function() {
+                timeout = setTimeout(function () {
                     if (click === 1) // what shall do when double clicking enabled and user single clicked the images
                         options.singleClickCallBack(event);
                     if (click >= 2) // show overlay when user double clicked(or more than double clicking, so it is even able to differentiate triple clicking and more...)
