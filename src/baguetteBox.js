@@ -590,6 +590,7 @@
             });
             var source = create('source');
             source.setAttribute('src', imageSrc);
+            video.setAttribute('loop','loop');
             video.appendChild(source);
             if (options.titleTag && imageCaption) {
                 video.title = imageCaption;
