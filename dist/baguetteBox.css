@@ -37,9 +37,13 @@
       max-height: 100%;
       max-width: 100%;
       vertical-align: middle;
+      transition: transform .5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
       -webkit-box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
          -moz-box-shadow: 0 0 8px rgba(0, 0, 0, 0.6);
               box-shadow: 0 0 8px rgba(0, 0, 0, 0.6); }
+    #baguetteBox-overlay .full-image img.scale,video.scale {
+      transform: scale(2.0);
+    }
     #baguetteBox-overlay .full-image figcaption {
       display: block;
       position: absolute;

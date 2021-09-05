@@ -51,7 +51,8 @@
             overlayBackgroundColor: 'rgba(0,0,0,.8)',
             dblTrigger: false,
             singleClickCallBack: null,
-            doubleClickJudgeTimeout: 300
+            doubleClickJudgeTimeout: 300,
+            scalable: false
         };
     // Object containing information about features compatibility
     var supports = {};
@@ -81,6 +82,17 @@
         // Close the overlay when user clicks directly on the background
         if (event.target.id.indexOf('baguette-img') !== -1) {
             hideOverlay();
+        }
+        else {
+            if (options.scalable) {
+                let classList = event.target.classList;
+                if (classList.contains('scale'))
+                    classList.remove('scale');
+                else {
+                    event.target.style.transformOrigin = event.offsetX + 'px ' + event.offsetY + 'px';
+                    classList.add('scale');
+                }
+            }
         }
     };
     var previousButtonClickHandler = function (event) {
@@ -236,7 +248,6 @@
             });
             selectorData.galleries.push(gallery);
         });
-
         return selectorData.galleries;
     }
 
@@ -580,7 +591,7 @@
             // Prepare gallery video element
             var video = create('video');
             //video.onload = function() {
-            video.addEventListener('loadeddata', function() {
+            video.addEventListener('loadeddata', function () {
                 //Remove loader element
                 var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
                 figure.removeChild(spinner);
@@ -590,7 +601,7 @@
             });
             var source = create('source');
             source.setAttribute('src', imageSrc);
-            video.setAttribute('loop','loop');
+            video.setAttribute('loop', 'loop');
             video.appendChild(source);
             if (options.titleTag && imageCaption) {
                 video.title = imageCaption;
@@ -599,7 +610,7 @@
         } else {
             // Prepare gallery img element
             var image = create('img');
-            image.onload = function() {
+            image.onload = function () {
                 // Remove loader element
                 var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
                 figure.removeChild(spinner);
@@ -635,7 +646,7 @@
                 }
             }
             // Sort resolutions ascending
-            var keys = Object.keys(srcs).sort(function(a, b) {
+            var keys = Object.keys(srcs).sort(function (a, b) {
                 return parseInt(a, 10) < parseInt(b, 10) ? -1 : 1;
             });
             // Get real screen resolution
