@@ -91,7 +91,7 @@
                     clearTimeout(timeout);
                     timeout = setTimeout(() => {
                         if (click === 1) {
-                            if (event.offsetX < window.innerWidth / 2) // video element cannot obtain width by event.target.width, so I use window width here instead
+                            if (event.offsetX < event.target.offsetWidth / 2) // video element cannot obtain width by event.target.width, so I use window width here instead
                                 showPreviousImage();
                             else
                                 showNextImage();
