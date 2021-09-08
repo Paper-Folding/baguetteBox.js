@@ -651,6 +651,8 @@
         if (options.async && callback) {
             callback();
         }
+        if (options.scalable)
+            $('.full-image').draggable();
     }
 
     // Get video source location, mostly used for responsive images
@@ -715,10 +717,11 @@
         return result;
     }
 
-    // clear scale state
-    function clearScale() {
+    // clear scale and drag state
+    function clearState() {
         let items = document.querySelectorAll('.full-image');
         for (let item of items) {
+            item.style = '';
             if (item.querySelector('figure') == null)
                 continue;
             let deeper = item.querySelector('img');
@@ -731,14 +734,14 @@
     // Return false at the right end of the gallery
     function showNextImage() {
         if (options.scalable)
-            clearScale();
+            clearState();
         return show(currentIndex + 1);
     }
 
     // Return false at the left end of the gallery
     function showPreviousImage() {
         if (options.scalable)
-            clearScale();
+            clearState();
         return show(currentIndex - 1);
     }
 
