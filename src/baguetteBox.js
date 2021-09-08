@@ -51,7 +51,7 @@
             overlayBackgroundColor: 'rgba(0,0,0,.8)',
             dblTrigger: false,
             singleClickCallBack: null,
-            doubleClickJudgeTimeout: 300,
+            doubleClickJudgeTimeout: 200,
             scalable: false
         };
     // Object containing information about features compatibility
@@ -78,23 +78,40 @@
     var imagesElements = [];
     // The last focused element before opening the overlay
     var documentLastFocus = null;
-    var overlayClickHandler = function (event) {
-        // Close the overlay when user clicks directly on the background
-        if (event.target.id.indexOf('baguette-img') !== -1) {
-            hideOverlay();
-        }
-        else {
-            if (options.scalable) {
-                let classList = event.target.classList;
-                if (classList.contains('scale'))
-                    classList.remove('scale');
-                else {
-                    event.target.style.transformOrigin = event.offsetX + 'px ' + event.offsetY + 'px';
-                    classList.add('scale');
+    var overlayClickHandler = (() => {
+        let timeout, click = 0;
+        return (event) => {
+            // Close the overlay when user clicks directly on the background
+            if (event.target.id.indexOf('baguette-img') !== -1) {
+                hideOverlay();
+            }
+            else {
+                if (options.scalable) {
+                    click++;
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => {
+                        if (click === 1) {
+                            if (event.offsetX < window.innerWidth / 2) // video element cannot obtain width by event.target.width, so I use window width here instead
+                                showPreviousImage();
+                            else
+                                showNextImage();
+                        }
+                        else if (click === 2) {
+                            let classList = event.target.classList;
+                            if (classList.contains('scale'))
+                                classList.remove('scale');
+                            else {
+                                event.target.style.transformOrigin = event.offsetX + 'px ' + event.offsetY + 'px';
+                                classList.add('scale');
+                            }
+                        }
+                        click = 0;
+                    }, options.doubleClickJudgeTimeout);
+
                 }
             }
         }
-    };
+    })();
     var previousButtonClickHandler = function (event) {
         event.stopPropagation ? event.stopPropagation() : event.cancelBubble = true; // eslint-disable-line no-unused-expressions
         showPreviousImage();
@@ -184,7 +201,7 @@
         supports.svg = testSvgSupport();
         supports.passiveEvents = testPassiveEventsSupport();
 
-        buildOverlay();
+        buildOverlay(userOptions);
         removeFromCache(selector);
         return bindImageClickListeners(selector, userOptions);
     }
@@ -277,7 +294,7 @@
         delete data[selector];
     }
 
-    function buildOverlay() {
+    function buildOverlay(options) {
         overlay = getByID('baguetteBox-overlay');
         // Check if the overlay already exists
         if (overlay) {
@@ -320,7 +337,7 @@
 
         previousButton.className = nextButton.className = closeButton.className = 'baguetteBox-button';
 
-        bindEvents();
+        bindEvents(options);
     }
 
     function keyDownHandler(event) {
@@ -343,7 +360,7 @@
         }
     }
 
-    function bindEvents() {
+    function bindEvents(options) {
         var passiveEvent = supports.passiveEvents ? { passive: false } : null;
         var nonPassiveEvent = supports.passiveEvents ? { passive: true } : null;
 
@@ -352,9 +369,11 @@
         bind(nextButton, 'click', nextButtonClickHandler);
         bind(closeButton, 'click', closeButtonClickHandler);
         bind(slider, 'contextmenu', contextmenuHandler);
-        bind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
-        bind(overlay, 'touchmove', touchmoveHandler, passiveEvent);
-        bind(overlay, 'touchend', touchendHandler);
+        if (!options.scalable) {
+            bind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
+            bind(overlay, 'touchmove', touchmoveHandler, passiveEvent);
+            bind(overlay, 'touchend', touchendHandler);
+        }
         bind(document, 'focus', trapFocusInsideOverlay, true);
     }
 
@@ -367,9 +386,11 @@
         unbind(nextButton, 'click', nextButtonClickHandler);
         unbind(closeButton, 'click', closeButtonClickHandler);
         unbind(slider, 'contextmenu', contextmenuHandler);
-        unbind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
-        unbind(overlay, 'touchmove', touchmoveHandler, passiveEvent);
-        unbind(overlay, 'touchend', touchendHandler);
+        if (!options.scalable) {
+            unbind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
+            unbind(overlay, 'touchmove', touchmoveHandler, passiveEvent);
+            unbind(overlay, 'touchend', touchendHandler);
+        }
         unbind(document, 'focus', trapFocusInsideOverlay, true);
     }
 
@@ -694,13 +715,30 @@
         return result;
     }
 
+    // clear scale state
+    function clearScale() {
+        let items = document.querySelectorAll('.full-image');
+        for (let item of items) {
+            if (item.querySelector('figure') == null)
+                continue;
+            let deeper = item.querySelector('img');
+            if (deeper == null)
+                deeper = item.querySelector('video');
+            deeper.classList.remove('scale');
+        }
+    }
+
     // Return false at the right end of the gallery
     function showNextImage() {
+        if (options.scalable)
+            clearScale();
         return show(currentIndex + 1);
     }
 
     // Return false at the left end of the gallery
     function showPreviousImage() {
+        if (options.scalable)
+            clearScale();
         return show(currentIndex - 1);
     }
 
