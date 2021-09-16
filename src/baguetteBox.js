@@ -99,7 +99,7 @@
                         else if (click === 2) {
                             let classList = event.target.classList;
                             if (classList.contains('scale'))
-                                classList.remove('scale');
+                                clearState();
                             else {
                                 event.target.style.transformOrigin = event.offsetX + 'px ' + event.offsetY + 'px';
                                 classList.add('scale');
