@@ -454,6 +454,10 @@
         }
     }
 
+    function toggleFullScreenBehavior() {
+        options.fullScreen = !options.fullScreen;
+    }
+
     function showOverlay(chosenImageIndex) {
         if (options.noScrollbars) {
             document.documentElement.style.overflowY = 'hidden';
@@ -951,6 +955,7 @@
         showNext: showNextImage,
         showPrevious: showPreviousImage,
         hide: hideOverlay,
-        destroy: destroyPlugin
+        destroy: destroyPlugin,
+        toggleFullScreenBehavior: toggleFullScreenBehavior
     };
 }));
