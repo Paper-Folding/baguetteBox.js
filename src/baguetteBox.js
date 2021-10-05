@@ -91,7 +91,7 @@
                     clearTimeout(timeout);
                     timeout = setTimeout(() => {
                         if (click === 1) {
-                            if (event.offsetX < window.innerWidth / 2) // video element cannot obtain width by event.target.width, so I use window width here instead
+                            if (event.offsetX < event.target.offsetWidth / 2) // video element cannot obtain width by event.target.width, so I use window width here instead
                                 showPreviousImage();
                             else
                                 showNextImage();
@@ -99,7 +99,7 @@
                         else if (click === 2) {
                             let classList = event.target.classList;
                             if (classList.contains('scale'))
-                                classList.remove('scale');
+                                clearState();
                             else {
                                 event.target.style.transformOrigin = event.offsetX + 'px ' + event.offsetY + 'px';
                                 classList.add('scale');
