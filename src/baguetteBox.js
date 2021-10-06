@@ -456,6 +456,7 @@
 
     function toggleFullScreenBehavior() {
         options.fullScreen = !options.fullScreen;
+        return options.fullScreen;
     }
 
     function showOverlay(chosenImageIndex) {
