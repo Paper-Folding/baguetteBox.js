@@ -84,7 +84,15 @@
         return (event) => {
             // Close the overlay when user clicks directly on the background
             if (event.target.id.indexOf('baguette-img') !== -1) {
-                hideOverlay();
+                let area = window.innerHeight * 0.2;
+                if (event.pageY < area || event.pageY > window.innerHeight - area)
+                    hideOverlay();
+                else {
+                    if (event.pageX < window.innerWidth / 2)
+                        showPreviousImage();
+                    else
+                        showNextImage();
+                }
             }
             else {
                 if (options.scalable) {
