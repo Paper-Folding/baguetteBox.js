@@ -106,6 +106,8 @@
                                 classList.add('scale');
                             }
                         }
+                        else if (click === 3)
+                            hideOverlay();
                         click = 0;
                     }, options.doubleClickJudgeTimeout);
 
