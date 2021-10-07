@@ -52,7 +52,8 @@
             dblTrigger: false,
             singleClickCallBack: null,
             doubleClickJudgeTimeout: 200,
-            scalable: false
+            scalable: false,
+            customContextMenuEnabled: false
         };
     // Object containing information about features compatibility
     var supports = {};
@@ -501,6 +502,8 @@
         documentLastFocus = document.activeElement;
         initFocus();
         isOverlayVisible = true;
+        if (options.customContextMenuEnabled)
+            loadContextMenu();
     }
 
     function initFocus() {
@@ -948,6 +951,23 @@
         data = {};
         currentGallery = [];
         currentIndex = 0;
+    }
+
+    function loadContextMenu() {
+        $('#baguetteBox-slider').contextMenu({
+            selector: '.full-image',
+            callback: function (key, ele) {
+                if (key === 'download') {
+                    window.location.assign(ele.$trigger.find('img').attr('src'));
+                } else if (key === 'exit') {
+                    hideOverlay();
+                }
+            },
+            items: {
+                "download": { name: "保存图片", icon: " bi-download" },
+                "exit": { name: "退出预览", icon: " bi-arrow-return-left" }
+            }
+        })
     }
 
     return {
