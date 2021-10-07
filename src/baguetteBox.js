@@ -502,8 +502,9 @@
         documentLastFocus = document.activeElement;
         initFocus();
         isOverlayVisible = true;
-        if (options.customContextMenuEnabled)
+        if (options.customContextMenuEnabled && !options.fullScreen) {
             loadContextMenu();
+        }
     }
 
     function initFocus() {
@@ -809,6 +810,20 @@
     }
 
     /**
+     * identify if next image is exists
+     */
+    function hasNextImage() {
+        return currentIndex < currentGallery.length - 1;
+    }
+
+    /**
+     * identify if previous image is exists
+     */
+    function hasPreviousImage() {
+        return currentIndex > 0;
+    }
+
+    /**
      * Triggers the bounce animation
      * @param {('left'|'right')} direction - Direction of the movement
      */
@@ -953,22 +968,34 @@
         currentIndex = 0;
     }
 
-    function loadContextMenu() {
-        $('#baguetteBox-slider').contextMenu({
-            selector: '.full-image',
-            callback: function (key, ele) {
-                if (key === 'download') {
-                    window.location.assign(ele.$trigger.find('img').attr('src'));
-                } else if (key === 'exit') {
-                    hideOverlay();
+    let loadContextMenu = (() => {
+        let time = 0; // make sure only one instance of context menu generated (context menu doc api destroy is not working....)
+        return () => {
+            if (time === 1)
+                return;
+            else
+                time++;
+            $('#baguetteBox-slider').contextMenu({
+                selector: '.full-image',
+                callback: function (key, ele) {
+                    if (key === 'download')
+                        window.location.assign(ele.$trigger.find('img').attr('src'));
+                    else if (key === 'prev')
+                        showPreviousImage();
+                    else if (key === 'next')
+                        showNextImage();
+                    else if (key === 'exit')
+                        hideOverlay();
+                },
+                items: {
+                    "download": { name: "保存图片", icon: " bi-download" },
+                    "prev": { name: "上一图", icon: " bi-box-arrow-left", visible: hasPreviousImage },
+                    "next": { name: "下一图", icon: " bi-box-arrow-right", visible: hasNextImage },
+                    "exit": { name: "退出预览", icon: " bi-arrow-return-left" }
                 }
-            },
-            items: {
-                "download": { name: "保存图片", icon: " bi-download" },
-                "exit": { name: "退出预览", icon: " bi-arrow-return-left" }
-            }
-        })
-    }
+            })
+        }
+    })();
 
     return {
         run: run,
