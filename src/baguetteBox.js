@@ -151,7 +151,7 @@
         event.stopPropagation ? event.stopPropagation() : event.cancelBubble = true; // eslint-disable-line no-unused-expressions
         hideOverlay();
     };
-    var touchstartHandler = function (event) {
+    var touchstartHandler = function () {
         touch.startTime = new Date().getTime();
         touch.isLongPressing = false;
     };
@@ -546,6 +546,8 @@
             }
             documentLastFocus && documentLastFocus.focus();
             isOverlayVisible = false;
+            if (options.scalable)
+                clearState();
         }, 500);
     }
 
