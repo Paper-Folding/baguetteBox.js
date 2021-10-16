@@ -67,8 +67,6 @@
     var isOverlayVisible = false;
     // Touch event start position (for slide gesture)
     var touch = {};
-    // If set to true ignore touch events because animation was already fired
-    var touchFlag = false;
     // Regex pattern to match image & video files
     var regex = /.+\.(gif|jpe?g|png|webp|mp4|webm)/i;
     // Pattern to match only videos
@@ -82,6 +80,22 @@
     var overlayClickHandler = (() => {
         let timeout, click = 0;
         return (event) => {
+            touch.endTime = new Date().getTime();
+            let contextMenu = $('.bagueteeBox-context-menu');
+            if (isLongPressing()) {
+                // !!! long press code
+                contextMenu.css({
+                    'display': '',
+                    'left': event.pageX + 'px',
+                    'top': event.pageY + 'px',
+                    'z-index': '1000001'
+                });
+                return;
+            }
+            if (contextMenu.css('display') !== 'none') {
+                contextMenu.css('display', 'none');
+                return;
+            }
             // Close the overlay when user clicks directly on the background
             if (event.target.id.indexOf('baguette-img') !== -1) {
                 let area = window.innerHeight * 0.2;
@@ -100,12 +114,14 @@
                     clearTimeout(timeout);
                     timeout = setTimeout(() => {
                         if (click === 1) {
+                            // !!! single click code
                             if (event.offsetX < event.target.offsetWidth / 2) // video element cannot obtain width by event.target.width, so I use window width here instead
                                 showPreviousImage();
                             else
                                 showNextImage();
                         }
                         else if (click === 2) {
+                            // !!! double click code
                             let classList = event.target.classList;
                             if (classList.contains('scale'))
                                 clearState();
@@ -136,43 +152,13 @@
         hideOverlay();
     };
     var touchstartHandler = function (event) {
-        touch.count++;
-        if (touch.count > 1) {
-            touch.multitouch = true;
-        }
-        // Save x and y axis position
-        touch.startX = event.changedTouches[0].pageX;
-        touch.startY = event.changedTouches[0].pageY;
+        touch.startTime = new Date().getTime();
+        touch.isLongPressing = false;
     };
-    var touchmoveHandler = function (event) {
-        // If action was already triggered or multitouch return
-        if (touchFlag || touch.multitouch) {
-            return;
-        }
-        event.preventDefault ? event.preventDefault() : event.returnValue = false; // eslint-disable-line no-unused-expressions
-        var touchEvent = event.touches[0] || event.changedTouches[0];
-        // Move at least 40 pixels to trigger the action
-        if (touchEvent.pageX - touch.startX > 40) {
-            touchFlag = true;
-            showPreviousImage();
-        } else if (touchEvent.pageX - touch.startX < -40) {
-            touchFlag = true;
-            showNextImage();
-            // Move 100 pixels up to close the overlay
-        } else if (touch.startY - touchEvent.pageY > 100) {
-            hideOverlay();
-        }
-    };
-    var touchendHandler = function () {
-        touch.count--;
-        if (touch.count <= 0) {
-            touch.multitouch = false;
-        }
-        touchFlag = false;
-    };
-    var contextmenuHandler = function () {
-        touchendHandler();
-    };
+
+    function isLongPressing() {
+        return Math.abs(touch.startTime - touch.endTime) >= 300;
+    }
 
     var trapFocusInsideOverlay = function (event) {
         if (overlay.style.display === 'block' && (overlay.contains && !overlay.contains(event.target))) {
@@ -379,12 +365,7 @@
         bind(previousButton, 'click', previousButtonClickHandler);
         bind(nextButton, 'click', nextButtonClickHandler);
         bind(closeButton, 'click', closeButtonClickHandler);
-        bind(slider, 'contextmenu', contextmenuHandler);
-        if (!options.scalable) {
-            bind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
-            bind(overlay, 'touchmove', touchmoveHandler, passiveEvent);
-            bind(overlay, 'touchend', touchendHandler);
-        }
+        bind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
         bind(document, 'focus', trapFocusInsideOverlay, true);
     }
 
@@ -396,12 +377,7 @@
         unbind(previousButton, 'click', previousButtonClickHandler);
         unbind(nextButton, 'click', nextButtonClickHandler);
         unbind(closeButton, 'click', closeButtonClickHandler);
-        unbind(slider, 'contextmenu', contextmenuHandler);
-        if (!options.scalable) {
-            unbind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
-            unbind(overlay, 'touchmove', touchmoveHandler, passiveEvent);
-            unbind(overlay, 'touchend', touchendHandler);
-        }
+        unbind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
         unbind(document, 'focus', trapFocusInsideOverlay, true);
     }
 
@@ -482,7 +458,6 @@
         bind(document, 'keydown', keyDownHandler);
         currentIndex = chosenImageIndex;
         touch = {
-            count: 0,
             startX: null,
             startY: null
         };
@@ -670,8 +645,11 @@
         if (options.async && callback) {
             callback();
         }
-        if (options.scalable)
-            $('.full-image').draggable();
+        if (options.scalable) {
+            $('.full-image').draggable({
+                addClasses: false
+            });
+        }
     }
 
     // Get video source location, mostly used for responsive images
@@ -987,9 +965,14 @@
                 time++;
             $('#baguetteBox-slider').contextMenu({
                 selector: '.full-image',
+                className: 'bagueteeBox-context-menu',
                 callback: function (key, ele) {
-                    if (key === 'download')
-                        window.location.assign(ele.$trigger.find('img').attr('src'));
+                    if (key === 'download') {
+                        if (ele.$trigger)
+                            window.location.assign(ele.$trigger.find('img').attr('src'));
+                        else
+                            window.location.assign($('#baguetteBox-slider').find('.full-image').eq(currentIndex).find('img').attr('src'));
+                    }
                     else if (key === 'prev')
                         showPreviousImage();
                     else if (key === 'next')
