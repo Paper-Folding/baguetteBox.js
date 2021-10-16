@@ -443,6 +443,11 @@
 
     function toggleFullScreenBehavior() {
         options.fullScreen = !options.fullScreen;
+        // full screen never show context menu
+        if (options.fullScreen)
+            $('.bagueteeBox-context-menu').addClass('d-none')
+        else
+            $('.bagueteeBox-context-menu').removeClass('d-none')
         return options.fullScreen;
     }
 
