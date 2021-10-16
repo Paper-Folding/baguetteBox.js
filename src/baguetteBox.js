@@ -155,6 +155,9 @@
         touch.startTime = new Date().getTime();
         touch.isLongPressing = false;
     };
+    var touchendHandler = function (event) {
+        event.stopPropagation();
+    };
 
     function isLongPressing() {
         return Math.abs(touch.startTime - touch.endTime) >= 300;
@@ -366,6 +369,7 @@
         bind(nextButton, 'click', nextButtonClickHandler);
         bind(closeButton, 'click', closeButtonClickHandler);
         bind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
+        bind(overlay, 'touchend', touchendHandler);
         bind(document, 'focus', trapFocusInsideOverlay, true);
     }
 
@@ -378,6 +382,7 @@
         unbind(nextButton, 'click', nextButtonClickHandler);
         unbind(closeButton, 'click', closeButtonClickHandler);
         unbind(overlay, 'touchstart', touchstartHandler, nonPassiveEvent);
+        unbind(overlay, 'touchend', touchendHandler);
         unbind(document, 'focus', trapFocusInsideOverlay, true);
     }
 
