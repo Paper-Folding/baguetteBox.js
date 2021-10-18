@@ -81,19 +81,10 @@
         let timeout, click = 0;
         return (event) => {
             touch.endTime = new Date().getTime();
-            let contextMenu = $('.bagueteeBox-context-menu');
+            // let contextMenu = $('.bagueteeBox-context-menu');
             if (isLongPressing()) {
                 // !!! long press code
-                contextMenu.css({
-                    'display': '',
-                    'left': event.pageX + 'px',
-                    'top': event.pageY + 'px',
-                    'z-index': '1000001'
-                });
-                return;
-            }
-            if (contextMenu.css('display') !== 'none') {
-                contextMenu.css('display', 'none');
+                $('#baguetteBox-slider .full-image').contextMenu({ x: event.pageX, y: event.pageY })
                 return;
             }
             // Close the overlay when user clicks directly on the background
@@ -130,8 +121,10 @@
                                 classList.add('scale');
                             }
                         }
-                        else if (click === 3)
+                        else if (click === 3) {
+                            // !!! triple click code
                             hideOverlay();
+                        }
                         click = 0;
                     }, options.doubleClickJudgeTimeout);
 
@@ -980,10 +973,7 @@
                 className: 'bagueteeBox-context-menu',
                 callback: function (key, ele) {
                     if (key === 'download') {
-                        if (ele.$trigger)
-                            window.location.assign(ele.$trigger.find('img').attr('src'));
-                        else
-                            window.location.assign($('#baguetteBox-slider').find('.full-image').eq(currentIndex).find('img').attr('src'));
+                        window.location.assign($('#baguetteBox-slider .full-image').eq(currentIndex).find('img').attr('src'));
                     }
                     else if (key === 'prev')
                         showPreviousImage();
