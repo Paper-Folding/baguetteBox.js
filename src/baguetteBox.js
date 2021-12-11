@@ -983,10 +983,10 @@
                         hideOverlay();
                 },
                 items: {
-                    "download": { name: "保存图片", icon: " bi-download" },
-                    "prev": { name: "上一图", icon: " bi-box-arrow-left", visible: hasPreviousImage },
-                    "next": { name: "下一图", icon: " bi-box-arrow-right", visible: hasNextImage },
-                    "exit": { name: "退出预览", icon: " bi-arrow-return-left" }
+                    "download": { name: "Save As....", icon: " bi-download" },
+                    "prev": { name: "Previous Image", icon: " bi-box-arrow-left", visible: hasPreviousImage },
+                    "next": { name: "Next Image", icon: " bi-box-arrow-right", visible: hasNextImage },
+                    "exit": { name: "Exit Preview", icon: " bi-arrow-return-left" }
                 }
             })
         }
