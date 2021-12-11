@@ -585,11 +585,11 @@
 
         // Get element reference, optional caption and source path
         var imageElement = galleryItem.imageElement;
-        var thumbnailElement = isVideo ? imageElement.getElementsByTagName('video')[0] : imageElement.getElementsByTagName('img')[0];
+        var thumbnailElement = imageElement.getElementsByTagName('img')[0];
         var imageCaption = typeof options.captions === 'function' ?
             options.captions.call(currentGallery, imageElement) :
             imageElement.getAttribute('data-caption') || imageElement.title;
-        var imageSrc = isVideo ? getVideoSrc(imageElement) : getImageSrc(imageElement);
+        var imageSrc = getImageSrc(imageElement);
 
         // Prepare figure element
         var figure = create('figure');
@@ -655,35 +655,6 @@
                 addClasses: false
             });
         }
-    }
-
-    // Get video source location, mostly used for responsive images
-    function getVideoSrc(image) {
-        // Set default image path from href
-        var result = image.getElementsByTagName('video')[0].getElementsByTagName('source')[0].src;
-        // If dataset is supported find the most suitable image
-        if (image.dataset) {
-            var srcs = [];
-            // Get all possible image versions depending on the resolution
-            for (var item in image.dataset) {
-                if (item.substring(0, 3) === 'at-' && !isNaN(item.substring(3))) {
-                    srcs[item.replace('at-', '')] = image.dataset[item];
-                }
-            }
-            // Sort resolutions ascending
-            var keys = Object.keys(srcs).sort(function (a, b) {
-                return parseInt(a, 10) < parseInt(b, 10) ? -1 : 1;
-            });
-            // Get real screen resolution
-            var width = window.innerWidth * window.devicePixelRatio;
-            // Find the first image bigger than or equal to the current width
-            var i = 0;
-            while (i < keys.length - 1 && keys[i] < width) {
-                i++;
-            }
-            result = srcs[keys[i]] || result;
-        }
-        return result;
     }
 
     // Get image source location, mostly used for responsive images
