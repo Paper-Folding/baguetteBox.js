@@ -1,16 +1,5 @@
 <h1 align="center">baguetteBox.js</h1>
 
-[![GitHub Release](https://img.shields.io/github/release/feimosi/baguetteBox.js.svg)](https://github.com/feimosi/baguetteBox.js/releases)
-[![MIT License](https://img.shields.io/npm/l/baguettebox.js.svg)](https://github.com/feimosi/baguetteBox.js/blob/dev/LICENSE)
-[![dependency Status](https://img.shields.io/badge/dependencies-none-blue.svg)](https://david-dm.org/feimosi/baguetteBox.js)
-[![devDependency Status](https://img.shields.io/david/dev/feimosi/baguetteBox.js.svg)](https://david-dm.org/feimosi/baguetteBox.js?type=dev)
-[![npm](https://img.shields.io/npm/dm/baguettebox.js.svg)](https://www.npmjs.com/package/baguettebox.js)
-[![Build Status](https://travis-ci.org/feimosi/baguetteBox.js.svg?branch=master)](https://travis-ci.org/feimosi/baguetteBox.js)
-
-[![Donate](https://img.shields.io/badge/Donate-PayPal-green.svg)](https://paypal.me/feimosi)
-[![Twitter](https://img.shields.io/twitter/url/http/shields.io.svg?style=social)](https://twitter.com/intent/tweet?text=Check%20out%20baguetteBox.js%20-%20simple%20and%20easy%20to%20use%20lightbox%20script%20written%20in%20pure%20JavaScript%0Ahttps%3A%2F%2Fgithub.com%2Ffeimosi%2FbaguetteBox.js)
-[![Twitter Follow](https://img.shields.io/twitter/follow/feimosi.svg?style=social&label=Follow%20the%20author)](https://twitter.com/feimosi)
-
 Simple and easy to use lightbox script written in pure JavaScript.
 
 [Demo page](https://feimosi.github.io/baguetteBox.js/)
@@ -262,16 +251,6 @@ Desktop:
 Mobile:
 * Safari on iOS
 * Chrome on Android
-
-## Contributing
-
-Feel free to report any issues! If you wish to contribute by fixing a bug or implementing a new feature, please first read the [CONTRIBUTING](./CONTRIBUTING.md) guide.
-
-## Donation
-
-If you find this project useful and want to say thanks, you can buy me a cup of coffee :)
-
-[![](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://paypal.me/feimosi)
 
 ## Credits
 
