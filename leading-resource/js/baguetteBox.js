@@ -354,7 +354,6 @@
     }
 
     function bindEvents(options) {
-        var passiveEvent = supports.passiveEvents ? { passive: false } : null;
         var nonPassiveEvent = supports.passiveEvents ? { passive: true } : null;
 
         bind(overlay, 'click', overlayClickHandler);
@@ -367,7 +366,6 @@
     }
 
     function unbindEvents() {
-        var passiveEvent = supports.passiveEvents ? { passive: false } : null;
         var nonPassiveEvent = supports.passiveEvents ? { passive: true } : null;
 
         unbind(overlay, 'click', overlayClickHandler);
