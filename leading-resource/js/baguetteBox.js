@@ -1,8 +1,7 @@
 /*!
  * baguetteBox.js
- * @author  feimosi
- * @version %%INJECT_VERSION%%
- * @url https://github.com/feimosi/baguetteBox.js
+ * @author  Paper-Folding
+ * @url https://github.com/Paper-Folding/baguetteBox.js
  */
 
 /* global define, module */
@@ -53,7 +52,8 @@
             singleClickCallBack: null,
             doubleClickJudgeTimeout: 200,
             scalable: false,
-            customContextMenuEnabled: false
+            customContextMenuEnabled: false,
+            initialImageURIList: []
         };
     // Object containing information about features compatibility
     var supports = {};
@@ -77,6 +77,7 @@
     var imagesElements = [];
     // The last focused element before opening the overlay
     var documentLastFocus = null;
+    // var scaleRate = getLocalStorage(constants.localKey.lightboxScaleRate);
     var overlayClickHandler = (() => {
         let timeout, click = 0;
         return (event) => {
@@ -118,6 +119,7 @@
                                 clearState();
                             else {
                                 event.target.style.transformOrigin = event.offsetX + 'px ' + event.offsetY + 'px';
+                                // event.target.style.setProperty('--scale-rate', scaleRate);
                                 classList.add('scale');
                             }
                         }
@@ -196,7 +198,75 @@
 
         buildOverlay(userOptions);
         removeFromCache(selector);
+        // user do go back operation to close self
+        window.onhashchange = () => {
+            if (location.hash !== '#baguette')
+                hideOverlay();
+        }
+
+        if (userOptions.initialImageURIList && userOptions.initialImageURIList.length > 0) {
+            bindImageListClickListeners(selector, userOptions);
+        }
+
         return bindImageClickListeners(selector, userOptions);
+    }
+
+    function addMore() {
+        let tagsNodeList = paper_container.getElementsByTagName('a');
+        let newTagsNodeList = [];
+        let oldList = data[Object.keys(data)[0]].galleries[0];
+        var gallery = [], oldLength = oldList.length;
+        [].forEach.call(tagsNodeList, function (ele, index) {
+            if (ele !== oldList[index]?.imageElement)
+                newTagsNodeList.push(ele);
+            else
+                gallery.push(ele);
+        });
+
+        if (newTagsNodeList.length === 0) {
+            return;
+        }
+
+        [].filter.call(newTagsNodeList, function (element) {
+            if (element.className.indexOf(paper_userOptions && paper_userOptions.ignoreClass) === -1) {
+                if (paper_userOptions.dblTrigger)
+                    return regex.test(element.getAttribute('dblHref'));
+                else
+                    return regex.test(element.href);
+            }
+        });
+
+        [].forEach.call(newTagsNodeList, function (imageElement, imageIndex) {
+            var imageElementClickHandler = function (event) {
+                event.preventDefault ? event.preventDefault() : event.returnValue = false; // eslint-disable-line no-unused-expressions
+                prepareOverlay(data[Object.keys(data)[0]].galleries[0], paper_userOptions);
+                showOverlay(oldLength + imageIndex);
+            };
+            var imageItem = {
+                eventHandler: imageElementClickHandler,
+                imageElement: imageElement
+            };
+            if (paper_userOptions.dblTrigger) // If double clicking to open overlay enabled
+                // singleClickCallBack defines that: when and only when double click to open overlay is enabled, what shall do when single clicked
+                bindSingleDoubleClickItems(imageElement, imageElementClickHandler, paper_userOptions);
+            else // else just do last version's behaviors
+                bind(imageElement, 'click', imageElementClickHandler);
+            data[Object.keys(data)[0]].galleries[0].push(imageItem.imageElement);
+        });
+
+        return gallery;
+    }
+
+    var paper_container;
+    var paper_userOptions;
+    
+    function bindImageListClickListeners(selector, userOptions) {
+        var galleryNodeList = document.querySelectorAll(selector);
+        var selectorData = {
+            galleries: [],
+            nodeList: galleryNodeList
+        };
+        data[selector] = selectorData;
     }
 
     function bindImageClickListeners(selector, userOptions) {
@@ -215,6 +285,7 @@
 
             // Get nodes from gallery elements or single-element galleries
             var tagsNodeList = [];
+            paper_container = galleryElement;
             if (galleryElement.tagName === 'A') {
                 tagsNodeList = [galleryElement];
             } else {
@@ -258,6 +329,7 @@
             });
             selectorData.galleries.push(gallery);
         });
+        paper_userOptions = userOptions;
         return selectorData.galleries;
     }
 
@@ -353,7 +425,7 @@
         }
     }
 
-    function bindEvents(options) {
+    function bindEvents() {
         var nonPassiveEvent = supports.passiveEvents ? { passive: true } : null;
 
         bind(overlay, 'click', overlayClickHandler);
@@ -448,6 +520,7 @@
     }
 
     function showOverlay(chosenImageIndex) {
+        location.hash = '#baguette';
         if (options.noScrollbars) {
             document.documentElement.style.overflowY = 'hidden';
             document.body.style.overflowY = 'scroll';
@@ -565,7 +638,7 @@
         var galleryItem = currentGallery[index];
         var isVideo = false;
         if (typeof imageContainer !== 'undefined') {
-            isVideo = videoRegex.test(galleryItem.imageElement.href);
+            isVideo = videoRegex.test(galleryItem instanceof HTMLAnchorElement ? galleryItem.href : galleryItem.imageElement.href);
         }
         // Return if the index exceeds prepared images in the overlay
         // or if the current gallery has been changed / closed
@@ -582,7 +655,7 @@
         }
 
         // Get element reference, optional caption and source path
-        var imageElement = galleryItem.imageElement;
+        var imageElement = galleryItem instanceof HTMLAnchorElement ? galleryItem : galleryItem.imageElement;
         var thumbnailElement = imageElement.getElementsByTagName('img')[0];
         var imageCaption = typeof options.captions === 'function' ?
             options.captions.call(currentGallery, imageElement) :
@@ -930,6 +1003,10 @@
         currentIndex = 0;
     }
 
+    // function getScaleRate() {
+    //     return scaleRate;
+    // }
+
     let loadContextMenu = (() => {
         let time = 0; // make sure only one instance of context menu generated (context menu doc api destroy is not working....)
         return () => {
@@ -940,7 +1017,10 @@
             $('#baguetteBox-slider').contextMenu({
                 selector: '.full-image',
                 className: 'bagueteeBox-context-menu',
-                callback: function (key, ele) {
+                build: function () {
+                    this.items.at.name = `${currentIndex + 1} / ${currentGallery.length}`;
+                },
+                callback: function (key) {
                     if (key === 'download') {
                         window.location.assign($('#baguetteBox-slider .full-image').eq(currentIndex).find('img').attr('src'));
                     }
@@ -950,12 +1030,65 @@
                         showNextImage();
                     else if (key === 'exit')
                         hideOverlay();
+                    // else if (key === 's2') {
+                    //     scaleRate = 2;
+                    //     localStorage.setItem(constants.localKey.lightboxScaleRate, '2');
+                    // }
+                    // else if (key === 's25') {
+                    //     scaleRate = 2.5;
+                    //     localStorage.setItem(constants.localKey.lightboxScaleRate, '2.5');
+                    // }
+                    // else if (key === 's3') {
+                    //     scaleRate = 3;
+                    //     localStorage.setItem(constants.localKey.lightboxScaleRate, '3');
+                    // }
+                    else if (key === 'f5' || key === 'f20' || key === 'f50') {
+                        let step = +key.substring(1);
+                        show(currentIndex === currentGallery.length - 1 ? currentGallery.length : ((currentIndex + step) >= currentGallery.length ? (currentGallery.length - 1) : currentIndex + step));
+                        clearState();
+                    }
+                    else if (key === 'b5' || key === 'b20' || key === 'b50') {
+                        let step = +key.substring(1);
+                        show(currentIndex === 0 ? -1 : ((currentIndex - step) < 0 ? 0 : (currentIndex - step)));
+                        clearState();
+                    }
+                    else if (key === 'fend') {
+                        show(currentGallery.length - 1);
+                        clearState();
+                    }
+                    else if (key === 'fstart') {
+                        show(0);
+                        clearState();
+                    }
                 },
                 items: {
-                    "download": { name: "Save As....", icon: " bi-download" },
-                    "prev": { name: "Previous Image", icon: " bi-box-arrow-left", visible: hasPreviousImage },
-                    "next": { name: "Next Image", icon: " bi-box-arrow-right", visible: hasNextImage },
-                    "exit": { name: "Exit Preview", icon: " bi-arrow-return-left" }
+                    "at": { name: "", disabled: true },
+                    "scale": {
+                        name: "Set Scale Rate", icon: " i-arrows-angle-expand",
+                        items: {
+                            "s2": { name: "2.0 (default)", icon: " i-cloud" },
+                            "s25": { name: "2.5", icon: " i-cloud-drizzle" },
+                            "s3": { name: "3.0", icon: " i-cloud-rain-heavy" }
+                        }
+                    },
+                    "skip": {
+                        name: "Skip Images", icon: " i-arrow-up-right",
+                        items: {
+                            "f5": { name: "5 Forward", icon: " i-chevron-compact-right" },
+                            "f20": { name: "20 Forward", icon: " i-chevron-right" },
+                            "f50": { name: "50 Forward", icon: " i-chevron-double-right" },
+                            "fend": { name: "Last One", icon: " i-chevron-bar-right" },
+                            "sep": "-",
+                            "b5": { name: "5 Backward", icon: " i-chevron-compact-left" },
+                            "b20": { name: "20 Backward", icon: " i-chevron-left" },
+                            "b50": { name: "50 Backward", icon: " i-chevron-double-left" },
+                            "fstart": { name: "First One", icon: " i-chevron-bar-left" },
+                        }
+                    },
+                    "download": { name: "Save As....", icon: " i-download" },
+                    "prev": { name: "Previous Image", icon: " i-box-arrow-left", visible: hasPreviousImage },
+                    "next": { name: "Next Image", icon: " i-box-arrow-right", visible: hasNextImage },
+                    "exit": { name: "Exit Preview", icon: " i-arrow-return-left" }
                 }
             })
         }
@@ -968,6 +1101,8 @@
         showPrevious: showPreviousImage,
         hide: hideOverlay,
         destroy: destroyPlugin,
-        toggleFullScreenBehavior: toggleFullScreenBehavior
+        toggleFullScreenBehavior: toggleFullScreenBehavior,
+        addMore,
+        // getScaleRate: getScaleRate
     };
 }));
