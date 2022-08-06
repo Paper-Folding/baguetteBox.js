@@ -77,7 +77,7 @@
     var imagesElements = [];
     // The last focused element before opening the overlay
     var documentLastFocus = null;
-    // var scaleRate = getLocalStorage(constants.localKey.lightboxScaleRate);
+    var scaleRate = 1;
     var overlayClickHandler = (() => {
         let timeout, click = 0;
         return (event) => {
@@ -115,13 +115,22 @@
                         else if (click === 2) {
                             // !!! double click code
                             let classList = event.target.classList;
-                            if (classList.contains('scale'))
-                                clearState();
-                            else {
-                                event.target.style.transformOrigin = event.offsetX + 'px ' + event.offsetY + 'px';
-                                // event.target.style.setProperty('--scale-rate', scaleRate);
-                                classList.add('scale');
+                            event.target.style.transformOrigin = event.offsetX + 'px ' + event.offsetY + 'px';
+                            switch (scaleRate) {
+                                case 0.8:
+                                    scaleRate = 1;
+                                    break;
+                                case 1:
+                                    scaleRate = 2;
+                                    break;
+                                case 2:
+                                    scaleRate = 3;
+                                    break;
+                                default:
+                                    scaleRate = 0.8;
                             }
+                            event.target.style.setProperty('--scale-rate', scaleRate);
+                            classList.add('scale');
                         }
                         else if (click === 3) {
                             // !!! triple click code
@@ -923,6 +932,7 @@
                 deeper = item.querySelector('video');
             deeper.classList.remove('scale');
         }
+        scaleRate = 1;
     }
 
     // Return false at the right end of the gallery
@@ -1153,10 +1163,6 @@
         currentIndex = 0;
     }
 
-    // function getScaleRate() {
-    //     return scaleRate;
-    // }
-
     let loadContextMenu = (() => {
         let time = 0; // make sure only one instance of context menu generated (context menu doc api destroy is not working....)
         return () => {
@@ -1180,18 +1186,6 @@
                         showNextImage();
                     else if (key === 'exit')
                         hideOverlay();
-                    // else if (key === 's2') {
-                    //     scaleRate = 2;
-                    //     localStorage.setItem(constants.localKey.lightboxScaleRate, '2');
-                    // }
-                    // else if (key === 's25') {
-                    //     scaleRate = 2.5;
-                    //     localStorage.setItem(constants.localKey.lightboxScaleRate, '2.5');
-                    // }
-                    // else if (key === 's3') {
-                    //     scaleRate = 3;
-                    //     localStorage.setItem(constants.localKey.lightboxScaleRate, '3');
-                    // }
                     else if (key === 'f5' || key === 'f20' || key === 'f50') {
                         let step = +key.substring(1);
                         show(currentIndex === currentGallery.length - 1 ? currentGallery.length : ((currentIndex + step) >= currentGallery.length ? (currentGallery.length - 1) : currentIndex + step));
