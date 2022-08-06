@@ -205,7 +205,7 @@
         }
 
         if (userOptions.initialImageURIList && userOptions.initialImageURIList.length > 0) {
-            bindImageListClickListeners(selector, userOptions);
+            return bindImageListClickListeners(selector, userOptions);
         }
 
         return bindImageClickListeners(selector, userOptions);
@@ -251,7 +251,7 @@
                 bindSingleDoubleClickItems(imageElement, imageElementClickHandler, paper_userOptions);
             else // else just do last version's behaviors
                 bind(imageElement, 'click', imageElementClickHandler);
-            data[Object.keys(data)[0]].galleries[0].push(imageItem.imageElement);
+            data[Object.keys(data)[0]].galleries[0].push({ imageElement: imageItem.imageElement, eventHandler: imageElementClickHandler });
         });
 
         return gallery;
@@ -259,14 +259,69 @@
 
     var paper_container;
     var paper_userOptions;
-    
+
     function bindImageListClickListeners(selector, userOptions) {
+        // For each gallery bind a click event to every image inside it
         var galleryNodeList = document.querySelectorAll(selector);
         var selectorData = {
             galleries: [],
             nodeList: galleryNodeList
         };
         data[selector] = selectorData;
+
+        [].forEach.call(galleryNodeList, function (galleryElement) {
+            if (userOptions && userOptions.filter) {
+                regex = userOptions.filter;
+            }
+
+            // Get nodes from gallery elements or single-element galleries
+            var tagsNodeList = [];
+            paper_container = galleryElement;
+            if (galleryElement.tagName === 'A') {
+                tagsNodeList = [galleryElement];
+            } else {
+                tagsNodeList = galleryElement.getElementsByTagName('a');
+            }
+
+            // Filter 'a' elements from those not linking to images
+            tagsNodeList = [].filter.call(tagsNodeList, function (element) {
+                if (element.className.indexOf(userOptions && userOptions.ignoreClass) === -1) {
+                    if (userOptions.dblTrigger)
+                        return regex.test(element.getAttribute('dblHref'));
+                    else
+                        return regex.test(element.href);
+                }
+            });
+            if (tagsNodeList.length === 0) {
+                return;
+            }
+
+            // setOptions calls after bind click listener, but doubleClickJudgeTimeout is eager to use its value during binding click listener
+            if (typeof userOptions.doubleClickJudgeTimeout === 'undefined')
+                userOptions.doubleClickJudgeTimeout = defaults.doubleClickJudgeTimeout;
+
+            var gallery = [];
+            [].forEach.call(tagsNodeList, function (imageElement, imageIndex) {
+                var imageElementClickHandler = function (event) {
+                    event.preventDefault ? event.preventDefault() : event.returnValue = false; // eslint-disable-line no-unused-expressions
+                    prepareOverlay(gallery, userOptions);
+                    showOverlay(imageIndex);
+                };
+                var imageItem = {
+                    eventHandler: imageElementClickHandler,
+                    imageElement: imageElement
+                };
+                if (userOptions.dblTrigger) // If double clicking to open overlay enabled
+                    // singleClickCallBack defines that: when and only when double click to open overlay is enabled, what shall do when single clicked
+                    bindSingleDoubleClickItems(imageElement, imageElementClickHandler, userOptions);
+                else // else just do last version's behaviors
+                    bind(imageElement, 'click', imageElementClickHandler);
+                gallery.push(imageItem);
+            });
+            selectorData.galleries.push(gallery);
+        });
+        paper_userOptions = userOptions;
+        return selectorData.galleries;
     }
 
     function bindImageClickListeners(selector, userOptions) {
@@ -466,15 +521,29 @@
         var imagesFiguresIds = [];
         var imagesCaptionsIds = [];
         // Prepare and append images containers and populate figure and captions IDs arrays
-        for (var i = 0, fullImage; i < gallery.length; i++) {
-            fullImage = create('div');
-            fullImage.className = 'full-image';
-            fullImage.id = 'baguette-img-' + i;
-            imagesElements.push(fullImage);
+        if (userOptions.initialImageURIList && userOptions.initialImageURIList.length > 0) {
+            let lengthhh = userOptions.initialImageURIList.length;
+            for (var i = 0, fullImage; i < lengthhh; i++) {
+                fullImage = create('div');
+                fullImage.className = 'full-image';
+                fullImage.id = 'baguette-img-' + i;
+                imagesElements.push(fullImage);
 
-            imagesFiguresIds.push('baguetteBox-figure-' + i);
-            imagesCaptionsIds.push('baguetteBox-figcaption-' + i);
-            slider.appendChild(imagesElements[i]);
+                imagesFiguresIds.push('baguetteBox-figure-' + i);
+                imagesCaptionsIds.push('baguetteBox-figcaption-' + i);
+                slider.appendChild(imagesElements[i]);
+            }
+        } else {
+            for (var i = 0, fullImage; i < gallery.length; i++) {
+                fullImage = create('div');
+                fullImage.className = 'full-image';
+                fullImage.id = 'baguette-img-' + i;
+                imagesElements.push(fullImage);
+
+                imagesFiguresIds.push('baguetteBox-figure-' + i);
+                imagesCaptionsIds.push('baguetteBox-figcaption-' + i);
+                slider.appendChild(imagesElements[i]);
+            }
         }
         overlay.setAttribute('aria-labelledby', imagesFiguresIds.join(' '));
         overlay.setAttribute('aria-describedby', imagesCaptionsIds.join(' '));
@@ -636,95 +705,176 @@
     function loadImage(index, callback) {
         var imageContainer = imagesElements[index];
         var galleryItem = currentGallery[index];
-        var isVideo = false;
-        if (typeof imageContainer !== 'undefined') {
-            isVideo = videoRegex.test(galleryItem instanceof HTMLAnchorElement ? galleryItem.href : galleryItem.imageElement.href);
-        }
-        // Return if the index exceeds prepared images in the overlay
-        // or if the current gallery has been changed / closed
-        if (typeof imageContainer === 'undefined' || typeof galleryItem === 'undefined') {
-            return;
-        }
+        if (galleryItem) {
+            var isVideo = false;
+            if (typeof imageContainer !== 'undefined') {
+                isVideo = videoRegex.test(galleryItem.imageElement.href);
+            }
+            // Return if the index exceeds prepared images in the overlay
+            // or if the current gallery has been changed / closed
+            if (typeof imageContainer === 'undefined' || typeof galleryItem === 'undefined') {
+                return;
+            }
 
-        // If image is already loaded run callback and return OR If video is already loaded run callback and return
-        if (imageContainer.getElementsByTagName('img').length > 0 || imageContainer.getElementsByTagName('video').length > 0) {
-            if (callback) {
+            // If image is already loaded run callback and return OR If video is already loaded run callback and return
+            if (imageContainer.getElementsByTagName('img').length > 0 || imageContainer.getElementsByTagName('video').length > 0) {
+                if (callback) {
+                    callback();
+                }
+                return;
+            }
+
+            // Get element reference, optional caption and source path
+            var imageElement = galleryItem.imageElement;
+            var thumbnailElement = imageElement.getElementsByTagName('img')[0];
+            var imageCaption = typeof options.captions === 'function' ?
+                options.captions.call(currentGallery, imageElement) :
+                imageElement.getAttribute('data-caption') || imageElement.title;
+            var imageSrc = getImageSrc(imageElement);
+
+            // Prepare figure element
+            var figure = create('figure');
+            figure.id = 'baguetteBox-figure-' + index;
+            figure.innerHTML = '<div class="baguetteBox-spinner">' +
+                '<div class="baguetteBox-double-bounce1"></div>' +
+                '<div class="baguetteBox-double-bounce2"></div>' +
+                '</div>';
+            // Insert caption if available
+            if (options.captions && imageCaption) {
+                var figcaption = create('figcaption');
+                figcaption.id = 'baguetteBox-figcaption-' + index;
+                figcaption.innerHTML = imageCaption;
+                figure.appendChild(figcaption);
+            }
+            imageContainer.appendChild(figure);
+
+            if (isVideo) {
+                // Prepare gallery video element
+                var video = create('video');
+                //video.onload = function() {
+                video.addEventListener('loadeddata', function () {
+                    //Remove loader element
+                    var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
+                    figure.removeChild(spinner);
+                    if (!options.async && callback) {
+                        callback();
+                    }
+                });
+                var source = create('source');
+                source.setAttribute('src', imageSrc);
+                video.setAttribute('loop', 'loop');
+                video.appendChild(source);
+                if (options.titleTag && imageCaption) {
+                    video.title = imageCaption;
+                }
+                figure.appendChild(video);
+            } else {
+                // Prepare gallery img element
+                var image = create('img');
+                image.onload = function () {
+                    // Remove loader element
+                    var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
+                    figure.removeChild(spinner);
+                    if (!options.async && callback) {
+                        callback();
+                    }
+                };
+                image.setAttribute('src', imageSrc);
+                image.alt = thumbnailElement ? thumbnailElement.alt || '' : '';
+                if (options.titleTag && imageCaption) {
+                    image.title = imageCaption;
+                }
+                figure.appendChild(image);
+            }
+
+            // Run callback
+            if (options.async && callback) {
                 callback();
             }
-            return;
-        }
-
-        // Get element reference, optional caption and source path
-        var imageElement = galleryItem instanceof HTMLAnchorElement ? galleryItem : galleryItem.imageElement;
-        var thumbnailElement = imageElement.getElementsByTagName('img')[0];
-        var imageCaption = typeof options.captions === 'function' ?
-            options.captions.call(currentGallery, imageElement) :
-            imageElement.getAttribute('data-caption') || imageElement.title;
-        var imageSrc = getImageSrc(imageElement);
-
-        // Prepare figure element
-        var figure = create('figure');
-        figure.id = 'baguetteBox-figure-' + index;
-        figure.innerHTML = '<div class="baguetteBox-spinner">' +
-            '<div class="baguetteBox-double-bounce1"></div>' +
-            '<div class="baguetteBox-double-bounce2"></div>' +
-            '</div>';
-        // Insert caption if available
-        if (options.captions && imageCaption) {
-            var figcaption = create('figcaption');
-            figcaption.id = 'baguetteBox-figcaption-' + index;
-            figcaption.innerHTML = imageCaption;
-            figure.appendChild(figcaption);
-        }
-        imageContainer.appendChild(figure);
-
-        if (isVideo) {
-            // Prepare gallery video element
-            var video = create('video');
-            //video.onload = function() {
-            video.addEventListener('loadeddata', function () {
-                //Remove loader element
-                var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
-                figure.removeChild(spinner);
-                if (!options.async && callback) {
-                    callback();
-                }
-            });
-            var source = create('source');
-            source.setAttribute('src', imageSrc);
-            video.setAttribute('loop', 'loop');
-            video.appendChild(source);
-            if (options.titleTag && imageCaption) {
-                video.title = imageCaption;
+            if (options.scalable) {
+                $('.full-image').draggable({
+                    addClasses: false
+                });
             }
-            figure.appendChild(video);
         } else {
-            // Prepare gallery img element
-            var image = create('img');
-            image.onload = function () {
-                // Remove loader element
-                var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
-                figure.removeChild(spinner);
-                if (!options.async && callback) {
+            var isVideo = false;
+            if (typeof imageContainer !== 'undefined') {
+                isVideo = videoRegex.test(paper_userOptions.initialImageURIList[index]);
+            } else {
+                return;
+            }
+            // If image is already loaded run callback and return OR If video is already loaded run callback and return
+            if (imageContainer.getElementsByTagName('img').length > 0 || imageContainer.getElementsByTagName('video').length > 0) {
+                if (callback) {
                     callback();
                 }
-            };
-            image.setAttribute('src', imageSrc);
-            image.alt = thumbnailElement ? thumbnailElement.alt || '' : '';
-            if (options.titleTag && imageCaption) {
-                image.title = imageCaption;
+                return;
             }
-            figure.appendChild(image);
-        }
 
-        // Run callback
-        if (options.async && callback) {
-            callback();
-        }
-        if (options.scalable) {
-            $('.full-image').draggable({
-                addClasses: false
-            });
+            // Get element reference, optional caption and source path
+            // var imageElement = galleryItem.imageElement;
+            // var thumbnailElement = imageElement.getElementsByTagName('img')[0];
+            // var imageCaption = typeof options.captions === 'function' ?
+            //     options.captions.call(currentGallery, imageElement) :
+            //     imageElement.getAttribute('data-caption') || imageElement.title;
+            var imageSrc = paper_userOptions.initialImageURIList[index];
+
+            // Prepare figure element
+            var figure = create('figure');
+            figure.id = 'baguetteBox-figure-' + index;
+            figure.innerHTML = '<div class="baguetteBox-spinner">' +
+                '<div class="baguetteBox-double-bounce1"></div>' +
+                '<div class="baguetteBox-double-bounce2"></div>' +
+                '</div>';
+            imageContainer.appendChild(figure);
+
+            if (isVideo) {
+                // Prepare gallery video element
+                var video = create('video');
+                //video.onload = function() {
+                video.addEventListener('loadeddata', function () {
+                    //Remove loader element
+                    var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
+                    figure.removeChild(spinner);
+                    if (!options.async && callback) {
+                        callback();
+                    }
+                });
+                var source = create('source');
+                source.setAttribute('src', imageSrc);
+                video.setAttribute('loop', 'loop');
+                video.appendChild(source);
+                if (options.titleTag && imageCaption) {
+                    video.title = imageCaption;
+                }
+                figure.appendChild(video);
+            } else {
+                // Prepare gallery img element
+                var image = create('img');
+                image.onload = function () {
+                    // Remove loader element
+                    var spinner = document.querySelector('#baguette-img-' + index + ' .baguetteBox-spinner');
+                    figure.removeChild(spinner);
+                    if (!options.async && callback) {
+                        callback();
+                    }
+                };
+                image.setAttribute('src', imageSrc);
+                if (options.titleTag && imageCaption) {
+                    image.title = imageCaption;
+                }
+                figure.appendChild(image);
+            }
+
+            // Run callback
+            if (options.async && callback) {
+                callback();
+            }
+            if (options.scalable) {
+                $('.full-image').draggable({
+                    addClasses: false
+                });
+            }
         }
     }
 
@@ -1018,7 +1168,7 @@
                 selector: '.full-image',
                 className: 'bagueteeBox-context-menu',
                 build: function () {
-                    this.items.at.name = `${currentIndex + 1} / ${currentGallery.length}`;
+                    this.items.at.name = `${currentIndex + 1} / ${(paper_userOptions.initialImageURIList && paper_userOptions.initialImageURIList.length) > 0 ? paper_userOptions.initialImageURIList.length : currentGallery.length}`;
                 },
                 callback: function (key) {
                     if (key === 'download') {
